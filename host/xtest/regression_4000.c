@@ -31,6 +31,10 @@
 
 #include <assert.h>
 
+#ifdef CFG_CRYPTO_RSASSA_NA1
+#undef CFG_CRYPTO_RSASSA_NA1
+#endif
+
 static TEEC_Result ta_crypt_cmd_reset_operation(ADBG_Case_t *c, TEEC_Session *s,
 						TEE_OperationHandle oph)
 {
@@ -833,7 +837,6 @@ static const uint8_t hash_data_sha1_out1[] = {
 	0xc6, 0x55, 0xb8, 0xaa, 0x52, 0xf4, 0xd2, 0x03,
 	0xc1, 0x5e, 0x7c, 0x9c
 };
-
 static const uint8_t hash_data_sha224_in1[] = {
 	'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm'
 };
@@ -844,7 +847,6 @@ static const uint8_t hash_data_sha224_out1[] = {
 	0x2d, 0x8f, 0x5c, 0x19, 0xfe, 0xd2, 0xe2, 0x68,
 	0x92, 0x49, 0xd8, 0x44
 };
-
 static const uint8_t hash_data_sha256_in1[] = { 'a', 'b', 'c' };
 
 static const uint8_t hash_data_sha256_out1[] = {
@@ -905,8 +907,10 @@ struct xtest_hash_case {
 	{ (algo), (in_incr), (in), ARRAY_SIZE(in), (out), ARRAY_SIZE(out) }
 
 static const struct xtest_hash_case hash_cases[] = {
+
 	XTEST_HASH_CASE(TEE_ALG_MD5, 6, hash_data_md5_in1,
 			hash_data_md5_out1),
+
 	XTEST_HASH_CASE(TEE_ALG_SHA1, 3, hash_data_sha1_in1,
 			hash_data_sha1_out1),
 	XTEST_HASH_CASE(TEE_ALG_SHA224, 7, hash_data_sha224_in1,
@@ -926,6 +930,8 @@ static void xtest_tee_test_4001(ADBG_Case_t *c)
 	TEEC_Session session = { };
 	uint32_t ret_orig = 0;
 	size_t n = 0;
+
+/* ldts: return to bypass */
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
@@ -1043,7 +1049,6 @@ static const uint8_t mac_data_md5_out1[] = {
 	0xb9, 0x0c, 0x2d, 0xc2, 0x49, 0x11, 0xe2, 0x75
 };
 
-
 /* generated with scripts/digest_hmac.pl */
 static const uint8_t mac_data_sha1_key1[10] = {
 	0x6B, 0x65, 0x79, /* key */
@@ -1083,7 +1088,6 @@ static const uint8_t mac_data_sha224_out1[] = {
 	0x2D, 0x96, 0x37, 0x99, 0x88, 0xAD, 0xA2, 0x56, /* -.7....V */
 	0x39, 0x74, 0x7E, 0x69,                         /* 9t~i */
 };
-
 
 static const uint8_t mac_data_sha256_key1[24] = {
 	'Q', 'W', 'E', 'R', 'T', 'Y'
@@ -1218,6 +1222,7 @@ static const uint8_t mac_cbc_vect3_key[] = {
 };
 
 #define mac_cbc_vect3_data mac_cbc_vect2_data
+
 static const uint8_t mac_cbc_vect3_out[] = {
 	0x1C, 0x17, 0xB7, 0xB5, 0x9F, 0x54, 0x9C, 0x63, /* .....T.c */
 };
@@ -1254,6 +1259,7 @@ static const uint8_t mac_cbc_vect6_key[] = {
 };
 
 #define mac_cbc_vect6_data mac_cbc_vect1_data
+
 static const uint8_t mac_cbc_vect6_out[] = {
 	0x6E, 0x37, 0x6E, 0x14, 0x5E, 0x21, 0xDD, 0xF8, /* n7n.^!.. */
 };
@@ -1290,6 +1296,7 @@ static const uint8_t mac_cbc_vect7_out[] = {
 
 /* DES-CBC-MAC PKCS#5 pad*/
 #define mac_cbc_vect8_key mac_cbc_vect5_key
+
 #define mac_cbc_vect8_data mac_cbc_vect7_data
 static const uint8_t mac_cbc_vect8_out[] = {
 	0x02, 0x2A, 0xA8, 0x2E, 0x47, 0xC6, 0xBB, 0x7C, /* ....G..| */
@@ -1558,6 +1565,7 @@ static const struct xtest_mac_case mac_cases[] = {
 			   34),
 	XTEST_MAC_CBC_CASE(TEE_ALG_DES3_CBC_MAC_PKCS5, TEE_TYPE_DES3, vect10, 4),
 
+
 	{ TEE_ALG_AES_CMAC, TEE_TYPE_AES, mac_cmac_vect1_key,
 	  ARRAY_SIZE(mac_cmac_vect1_key), 0, NULL, 0, mac_cmac_vect1_out,
 	  ARRAY_SIZE(mac_cmac_vect1_out) },
@@ -1589,6 +1597,8 @@ static void xtest_tee_test_4002(ADBG_Case_t *c)
 	uint32_t ret_orig = 0;
 	size_t n = 0;
 
+/* ldts: return to bypass */
+
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
 					&ret_orig)))
@@ -1600,7 +1610,27 @@ static void xtest_tee_test_4002(ADBG_Case_t *c)
 		size_t offs = 0;
 
 		Do_ADBG_BeginSubCase(c, "MAC case %d algo 0x%x",
-				     (int)n, (unsigned int)mac_cases[n].algo);
+			(int)n, (unsigned int)mac_cases[n].algo);
+
+		if (mac_cases[n].key_type == TEE_TYPE_DES3) {
+			Do_ADBG_Log("\tskip DES3");
+			Do_ADBG_EndSubCase(c, NULL);
+			continue;
+		}
+
+		if (mac_cases[n].algo == TEE_ALG_HMAC_SHA384 ||
+		    mac_cases[n].algo == TEE_ALG_HMAC_SHA512) {
+			Do_ADBG_Log("\tskip TEE_ALG_HMAC_SHA384/HMAC_512");
+			Do_ADBG_EndSubCase(c, NULL);
+			continue;
+		}
+
+		if (mac_cases[n].algo == TEE_ALG_DES_CBC_MAC_PKCS5 ||
+		    mac_cases[n].algo == TEE_ALG_DES_CBC_MAC_NOPAD) {
+			Do_ADBG_Log("\tskip TEE_ALG_DES_CBC_MAC_PKCS5/NOPAD");
+			Do_ADBG_EndSubCase(c, NULL);
+			continue;
+		}
 
 		key_attr.attributeID = TEE_ATTR_SECRET_VALUE;
 		key_attr.content.ref.buffer = (void *)mac_cases[n].key;
@@ -2327,6 +2357,8 @@ static void xtest_tee_test_4003(ADBG_Case_t *c)
 	uint32_t ret_orig = 0;
 	size_t n = 0;
 
+/* ldts: return to bypass */
+
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
 					&ret_orig)))
@@ -2466,6 +2498,8 @@ static void xtest_tee_test_4004(ADBG_Case_t *c)
 	uint8_t buf2[45] = { };
 	static const uint8_t zeros[45];
 
+/* ldts: return to bypass */
+
 	Do_ADBG_BeginSubCase(c, "TEE get random");
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
@@ -2593,6 +2627,8 @@ static void xtest_tee_test_4005(ADBG_Case_t *c)
 	size_t out_offs = 0;
 	uint32_t ret_orig = 0;
 	size_t n = 0;
+
+/* ldts: return to bypass */
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
@@ -3292,11 +3328,91 @@ static const struct xtest_ac_case xtest_ac_cases[] = {
 	/* [mod = L=3072, N=256, SHA-384] - GP NOT SUPPORTED */
 	/* [mod = L=3072, N=256, SHA-512] - GP NOT SUPPORTED */
 
+
+	XTEST_AC_ECDSA_CASE(0, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
+			    nist_186_2_ecdsa_testvector_31),
+
 	/* ECDSA tests */
+	/* [P-256] */
+	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
+			    nist_186_2_ecdsa_testvector_31),
+
+	XTEST_AC_ECDSA_CASE(0, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
+			    nist_186_2_ecdsa_testvector_31),
+	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
+			    nist_186_2_ecdsa_testvector_32),
+
+	XTEST_AC_ECDSA_CASE(0, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
+			    nist_186_2_ecdsa_testvector_32),
+	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
+			    nist_186_2_ecdsa_testvector_33),
+
+	XTEST_AC_ECDSA_CASE(0, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
+			    nist_186_2_ecdsa_testvector_33),
+	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
+			    nist_186_2_ecdsa_testvector_34),
+
+	XTEST_AC_ECDSA_CASE(0, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
+			    nist_186_2_ecdsa_testvector_34),
+	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
+			    nist_186_2_ecdsa_testvector_35),
+
+	XTEST_AC_ECDSA_CASE(0, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
+			    nist_186_2_ecdsa_testvector_35),
+	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
+			    nist_186_2_ecdsa_testvector_36),
+
+	XTEST_AC_ECDSA_CASE(0, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
+			    nist_186_2_ecdsa_testvector_36),
+	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
+			    nist_186_2_ecdsa_testvector_37),
+
+	XTEST_AC_ECDSA_CASE(0, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
+			    nist_186_2_ecdsa_testvector_37),
+	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
+			    nist_186_2_ecdsa_testvector_38),
+
+	XTEST_AC_ECDSA_CASE(0, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
+			    nist_186_2_ecdsa_testvector_38),
+	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
+			    nist_186_2_ecdsa_testvector_39),
+
+	XTEST_AC_ECDSA_CASE(0, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
+			    nist_186_2_ecdsa_testvector_39),
+	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
+			    nist_186_2_ecdsa_testvector_40),
+
+	XTEST_AC_ECDSA_CASE(0, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
+			    nist_186_2_ecdsa_testvector_40),
+	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
+			    nist_186_2_ecdsa_testvector_41),
+
+//	XTEST_AC_ECDSA_CASE(0, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
+//			    nist_186_2_ecdsa_testvector_41),
+	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
+			    nist_186_2_ecdsa_testvector_42),
+
+	XTEST_AC_ECDSA_CASE(0, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
+			    nist_186_2_ecdsa_testvector_42),
+	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
+			    nist_186_2_ecdsa_testvector_43),
+
+	XTEST_AC_ECDSA_CASE(0, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
+			    nist_186_2_ecdsa_testvector_43),
+	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
+			    nist_186_2_ecdsa_testvector_44),
+
+	XTEST_AC_ECDSA_CASE(0, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
+			    nist_186_2_ecdsa_testvector_44),
+	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
+			    nist_186_2_ecdsa_testvector_45),
+
+	XTEST_AC_ECDSA_CASE(0, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
+			    nist_186_2_ecdsa_testvector_45),
 	/* [P-192] */
-	XTEST_AC_ECDSA_CASE(0, TEE_ALG_ECDSA_P192, TEE_MODE_VERIFY,
+	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P192, TEE_MODE_VERIFY,
 			    nist_186_2_ecdsa_testvector_1),
-	XTEST_AC_ECDSA_CASE(0, TEE_ALG_ECDSA_P192, TEE_MODE_SIGN,
+	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P192, TEE_MODE_SIGN,
 			    nist_186_2_ecdsa_testvector_1),
 	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P192, TEE_MODE_VERIFY,
 			    nist_186_2_ecdsa_testvector_2),
@@ -3355,13 +3471,13 @@ static const struct xtest_ac_case xtest_ac_cases[] = {
 	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P192, TEE_MODE_SIGN,
 			    nist_186_2_ecdsa_testvector_15),
 	/* [P-224] */
-	XTEST_AC_ECDSA_CASE(1, TEE_ALG_ECDSA_P224, TEE_MODE_VERIFY,
+	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P224, TEE_MODE_VERIFY,
 			    nist_186_2_ecdsa_testvector_16),
-	XTEST_AC_ECDSA_CASE(1, TEE_ALG_ECDSA_P224, TEE_MODE_SIGN,
+	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P224, TEE_MODE_SIGN,
 			    nist_186_2_ecdsa_testvector_16),
 	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P224, TEE_MODE_VERIFY,
 			    nist_186_2_ecdsa_testvector_17),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P224, TEE_MODE_SIGN,
+ 	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P224, TEE_MODE_SIGN,
 			    nist_186_2_ecdsa_testvector_17),
 	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P224, TEE_MODE_VERIFY,
 			    nist_186_2_ecdsa_testvector_18),
@@ -3415,71 +3531,10 @@ static const struct xtest_ac_case xtest_ac_cases[] = {
 			    nist_186_2_ecdsa_testvector_30),
 	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P224, TEE_MODE_SIGN,
 			    nist_186_2_ecdsa_testvector_30),
-	/* [P-256] */
-	XTEST_AC_ECDSA_CASE(1, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
-			    nist_186_2_ecdsa_testvector_31),
-	XTEST_AC_ECDSA_CASE(1, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
-			    nist_186_2_ecdsa_testvector_31),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
-			    nist_186_2_ecdsa_testvector_32),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
-			    nist_186_2_ecdsa_testvector_32),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
-			    nist_186_2_ecdsa_testvector_33),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
-			    nist_186_2_ecdsa_testvector_33),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
-			    nist_186_2_ecdsa_testvector_34),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
-			    nist_186_2_ecdsa_testvector_34),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
-			    nist_186_2_ecdsa_testvector_35),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
-			    nist_186_2_ecdsa_testvector_35),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
-			    nist_186_2_ecdsa_testvector_36),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
-			    nist_186_2_ecdsa_testvector_36),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
-			    nist_186_2_ecdsa_testvector_37),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
-			    nist_186_2_ecdsa_testvector_37),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
-			    nist_186_2_ecdsa_testvector_38),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
-			    nist_186_2_ecdsa_testvector_38),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
-			    nist_186_2_ecdsa_testvector_39),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
-			    nist_186_2_ecdsa_testvector_39),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
-			    nist_186_2_ecdsa_testvector_40),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
-			    nist_186_2_ecdsa_testvector_40),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
-			    nist_186_2_ecdsa_testvector_41),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
-			    nist_186_2_ecdsa_testvector_41),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
-			    nist_186_2_ecdsa_testvector_42),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
-			    nist_186_2_ecdsa_testvector_42),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
-			    nist_186_2_ecdsa_testvector_43),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
-			    nist_186_2_ecdsa_testvector_43),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
-			    nist_186_2_ecdsa_testvector_44),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
-			    nist_186_2_ecdsa_testvector_44),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
-			    nist_186_2_ecdsa_testvector_45),
-	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
-			    nist_186_2_ecdsa_testvector_45),
 	/* [P-384] */
-	XTEST_AC_ECDSA_CASE(1, TEE_ALG_ECDSA_P384, TEE_MODE_VERIFY,
+	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P384, TEE_MODE_VERIFY,
 			    nist_186_2_ecdsa_testvector_46),
-	XTEST_AC_ECDSA_CASE(1, TEE_ALG_ECDSA_P384, TEE_MODE_SIGN,
+	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P384, TEE_MODE_SIGN,
 			    nist_186_2_ecdsa_testvector_46),
 	XTEST_AC_ECDSA_CASE(15, TEE_ALG_ECDSA_P384, TEE_MODE_VERIFY,
 			    nist_186_2_ecdsa_testvector_47),
@@ -3677,6 +3732,8 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 	uint32_t curve = 0;
 	uint32_t hash_algo = 0;
 
+/* ldts: return to bypass */
+
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
 			&ret_orig)))
@@ -3688,6 +3745,9 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 		if (tv->level > level)
 			continue;
 
+		if (TEE_ALG_GET_MAIN_ALG(tv->algo) != TEE_MAIN_ALGO_ECDSA)
+			continue;
+
 		Do_ADBG_BeginSubCase(c, "Asym Crypto case %d algo 0x%x line %d",
 				     (int)n, (unsigned int)tv->algo,
 				     (int)tv->line);
@@ -3697,8 +3757,28 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 		 * the payload.
 		 */
 		if (tv->mode == TEE_MODE_VERIFY || tv->mode == TEE_MODE_SIGN) {
-			if (TEE_ALG_GET_MAIN_ALG(tv->algo) == TEE_MAIN_ALGO_ECDSA)
-				hash_algo = TEE_ALG_SHA1;
+			/*LDTS: upstream this fix */
+			if (TEE_ALG_GET_MAIN_ALG(tv->algo) == TEE_MAIN_ALGO_ECDSA){
+				switch (tv->algo) {
+				case TEE_ALG_ECDSA_P192:
+ 					hash_algo = TEE_ALG_SHA1;
+					break;
+				case TEE_ALG_ECDSA_P224:
+ 					hash_algo = TEE_ALG_SHA224;
+					break;
+				case TEE_ALG_ECDSA_P256:
+ 					hash_algo = TEE_ALG_SHA256;
+					break;
+				case TEE_ALG_ECDSA_P384:
+ 					hash_algo = TEE_ALG_SHA384;
+					break;
+				case TEE_ALG_ECDSA_P521:
+ 					hash_algo = TEE_ALG_SHA512;
+					break;
+				default:
+ 					hash_algo = TEE_ALG_SHA1;
+				}
+			}
 #if defined(CFG_CRYPTO_RSASSA_NA1)
 			else if (tv->algo == TEE_ALG_RSASSA_PKCS1_V1_5)
 				hash_algo = TEE_ALG_SHA256;
@@ -4038,7 +4118,7 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 				ta_crypt_cmd_asymmetric_verify(c, &session, op,
 					algo_params, num_algo_params, ptx_hash,
 					ptx_hash_size, tv->ctx, tv->ctx_len)))
-				goto out;
+				continue;
 			break;
 
 		case TEE_MODE_SIGN:
@@ -4063,8 +4143,9 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_asymmetric_sign(c, &session, op,
 					algo_params, num_algo_params, ptx_hash,
-					ptx_hash_size, out, &out_size)))
-				goto out;
+					ptx_hash_size, out, &out_size))) {
+				;
+			}
 
 			if (TEE_ALG_GET_CHAIN_MODE(tv->algo) ==
 			    TEE_CHAIN_MODE_PKCS1_PSS_MGF1 ||
@@ -4076,7 +4157,7 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 				if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 					ta_crypt_cmd_free_operation(c, &session,
 								    op)))
-					goto out;
+					continue;
 				/*
 				 * The salt or K is random so we can't verify
 				 * signing against precomputed values, instead
@@ -4106,7 +4187,7 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 						&session, op, algo_params,
 						num_algo_params, ptx_hash,
 						ptx_hash_size, out, out_size)))
-					goto out;
+					continue;
 			} else {
 				(void)ADBG_EXPECT_BUFFER(c, tv->ctx,
 							 tv->ctx_len, out,
@@ -4406,6 +4487,9 @@ static void xtest_tee_test_4007_symmetric(ADBG_Case_t *c)
 		{ 0, "Generic secret", TEE_TYPE_GENERIC_SECRET, 8, 128, 4096 },
 	};
 
+
+/* ldts: return to bypass */
+
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
 					&ret_orig)))
@@ -4423,7 +4507,7 @@ static void xtest_tee_test_4007_rsa(ADBG_Case_t *c)
 	TEEC_Session session = { };
 	uint32_t ret_orig = 0;
 	static const struct key_types_noparam key_types[] = {
-		{ 0, "RSA-256", TEE_TYPE_RSA_KEYPAIR, 1, 256, 256 },
+		{ 1, "RSA-256", TEE_TYPE_RSA_KEYPAIR, 1, 256, 256 },
 		{ 1, "RSA-384", TEE_TYPE_RSA_KEYPAIR, 1, 384, 384 },
 		{ 1, "RSA-512", TEE_TYPE_RSA_KEYPAIR, 1, 512, 512 },
 		{ 1, "RSA-640", TEE_TYPE_RSA_KEYPAIR, 1, 640, 640 },
@@ -4432,8 +4516,10 @@ static void xtest_tee_test_4007_rsa(ADBG_Case_t *c)
 		{ 1, "RSA-1024", TEE_TYPE_RSA_KEYPAIR, 1, 1024, 1024 },
 		{ 1, "RSA-2048", TEE_TYPE_RSA_KEYPAIR, 1, 2048, 2048 },
 		{ 1, "RSA-3072", TEE_TYPE_RSA_KEYPAIR, 1, 3072, 3072 },
-		{ 1, "RSA-4096", TEE_TYPE_RSA_KEYPAIR, 1, 4096, 4096 },
+		{ 0, "RSA-4096", TEE_TYPE_RSA_KEYPAIR, 1, 4096, 4096 },
 	};
+
+/* ldts: return to bypass */
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
@@ -4514,6 +4600,8 @@ static void xtest_tee_test_4007_dh(ADBG_Case_t *c)
 		{ 1, 2048, XTEST_DH_GK_DATA(keygen_dh2048) },
 		{ 1, 2048, XTEST_DH_GK_DATA_SUBPRIME(keygen_dh2048_subprime) }
 	};
+
+/* ldts: return to bypass */
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
@@ -4605,6 +4693,8 @@ static void xtest_tee_test_4007_dsa(ADBG_Case_t *c)
 		{ 1, 1024, XTEST_DSA_GK_DATA(keygen_dsa1024) },
 	};
 
+/* ldts: return to bypass */
+
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
 					&ret_orig)))
@@ -4660,11 +4750,11 @@ static void xtest_tee_test_4007_ecc(ADBG_Case_t *c)
 		uint32_t key_size;
 	} key_types[] = {
 	/* ECDSA */
-	{ 0, "ECDSA-192", TEE_TYPE_ECDSA_KEYPAIR, TEE_ECC_CURVE_NIST_P192,
+	{ 1, "ECDSA-192", TEE_TYPE_ECDSA_KEYPAIR, TEE_ECC_CURVE_NIST_P192,
 		192 },
 	{ 1, "ECDSA-224", TEE_TYPE_ECDSA_KEYPAIR, TEE_ECC_CURVE_NIST_P224,
 		224 },
-	{ 1, "ECDSA-256", TEE_TYPE_ECDSA_KEYPAIR, TEE_ECC_CURVE_NIST_P256,
+	{ 0, "ECDSA-256", TEE_TYPE_ECDSA_KEYPAIR, TEE_ECC_CURVE_NIST_P256,
 		256 },
 	{ 1, "ECDSA-384", TEE_TYPE_ECDSA_KEYPAIR, TEE_ECC_CURVE_NIST_P384,
 		384 },
@@ -4672,17 +4762,18 @@ static void xtest_tee_test_4007_ecc(ADBG_Case_t *c)
 		521 },
 
 	/* ECDH */
-	{ 0, "ECDH-192", TEE_TYPE_ECDH_KEYPAIR, TEE_ECC_CURVE_NIST_P192,
+	{ 1, "ECDH-192", TEE_TYPE_ECDH_KEYPAIR, TEE_ECC_CURVE_NIST_P192,
 		192 },
 	{ 1, "ECDH-224", TEE_TYPE_ECDH_KEYPAIR, TEE_ECC_CURVE_NIST_P224,
 		224 },
-	{ 1, "ECDH-256", TEE_TYPE_ECDH_KEYPAIR, TEE_ECC_CURVE_NIST_P256,
+	{ 0, "ECDH-256", TEE_TYPE_ECDH_KEYPAIR, TEE_ECC_CURVE_NIST_P256,
 		256 },
 	{ 1, "ECDH-384", TEE_TYPE_ECDH_KEYPAIR, TEE_ECC_CURVE_NIST_P384,
 		384 },
 	{ 1, "ECDH-521", TEE_TYPE_ECDH_KEYPAIR, TEE_ECC_CURVE_NIST_P521,
 		521 },
 	};
+
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
@@ -4724,6 +4815,8 @@ static void xtest_tee_test_4008(ADBG_Case_t *c)
 	size_t param_count = 0;
 	uint8_t out[2048] = { };
 	size_t out_size = 0;
+
+/* ldts: return to bypass */
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
@@ -4826,6 +4919,8 @@ static void xtest_tee_test_4009(ADBG_Case_t *c)
 	uint32_t size_bytes = 0;
 	uint32_t i = 0;
 	struct derive_key_ecdh_t *pt = NULL;
+
+/* ldts: return to bypass */
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
@@ -4955,6 +5050,8 @@ static void xtest_tee_test_4010(ADBG_Case_t *c)
 		.content.ref.length = sizeof(large_key),
 	};
 
+/* ldts: return to bypass */
+
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
 					&ret_orig)))
@@ -4978,21 +5075,23 @@ ADBG_CASE_DEFINE(regression, 4010, xtest_tee_test_4010,
 static void xtest_tee_test_4011(ADBG_Case_t *c)
 {
 	TEEC_Session s = { };
-	size_t key_size = 512;
+	size_t key_size = 2048;
 	TEE_ObjectHandle key = TEE_HANDLE_NULL;
 	TEE_OperationHandle ops = TEE_HANDLE_NULL;
 	TEE_OperationHandle opv = TEE_HANDLE_NULL;
 	TEE_OperationHandle ope = TEE_HANDLE_NULL;
 	TEE_OperationHandle opd = TEE_HANDLE_NULL;
 	uint32_t ret_orig = 0;
-	uint8_t in[TEE_SHA1_HASH_SIZE] = { };
-	uint8_t out[1024] = { };
-	uint8_t tmp[1024] = { };
+	uint8_t in[TEE_SHA256_HASH_SIZE] = { };
+	uint8_t out[4096] = { };
+	uint8_t tmp[4096] = { };
 	size_t out_size = 0;
 	size_t tmp_size = 0;
 	size_t n = 0;
 	size_t m = 0;
 	size_t i = 0;
+
+/* ldts: return to bypass */
 
 	/* Setup session, initialize message to sign, create a keypair */
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, xtest_teec_open_session(&s,
@@ -5004,27 +5103,36 @@ static void xtest_tee_test_4011(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, ta_crypt_cmd_allocate_transient_object(
 			c, &s, TEE_TYPE_RSA_KEYPAIR, key_size, &key)))
 		goto out;
+
+	Do_ADBG_Log("Generating key");
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, ta_crypt_cmd_generate_key(c, &s,
 			key, key_size, NULL, 0)))
 		goto out;
 
 	/* Allocate operations for sign, verify, encrypt and decrypt */
+	Do_ADBG_Log("Allocate operation: sign  pkcs1 sha256");
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, ta_crypt_cmd_allocate_operation(c, &s,
-			&ops, TEE_ALG_RSASSA_PKCS1_V1_5_SHA1, TEE_MODE_SIGN,
+			&ops, TEE_ALG_RSASSA_PKCS1_V1_5_SHA256, TEE_MODE_SIGN,
 			key_size)))
 		goto out;
+
+	Do_ADBG_Log("Allocate operation: verify  pkcs1 sha256");
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, ta_crypt_cmd_allocate_operation(c, &s,
-			&opv, TEE_ALG_RSASSA_PKCS1_V1_5_SHA1, TEE_MODE_VERIFY,
+			&opv, TEE_ALG_RSASSA_PKCS1_V1_5_SHA256, TEE_MODE_VERIFY,
 			key_size)))
 		goto out;
+
+	Do_ADBG_Log("Allocate operation: encrypt nopad");
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, ta_crypt_cmd_allocate_operation(c, &s,
 			&ope, TEE_ALG_RSA_NOPAD, TEE_MODE_ENCRYPT, key_size)))
 		goto out;
+	Do_ADBG_Log("Allocate operation: decrypt  nopad");
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, ta_crypt_cmd_allocate_operation(c, &s,
 			&opd, TEE_ALG_RSA_NOPAD, TEE_MODE_DECRYPT, key_size)))
 		goto out;
 
 	/* Assign the keypair to all operations */
+	Do_ADBG_Log("Assign the key_pair to all operations");
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		ta_crypt_cmd_set_operation_key(c, &s, ops, key)))
 		goto out;
@@ -5061,6 +5169,7 @@ static void xtest_tee_test_4011(ADBG_Case_t *c)
 	for (i = 0; i < 9; i++) {
 		Do_ADBG_Log("Iteration %zu", i);
 
+		Do_ADBG_Log("\tsign");
 		/* 1 */
 		out_size = sizeof(out);
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
@@ -5068,6 +5177,7 @@ static void xtest_tee_test_4011(ADBG_Case_t *c)
 				in, sizeof(in), out, &out_size)))
 			goto out;
 
+		Do_ADBG_Log("\tverify");
 		/* 2 */
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_asymmetric_verify(c, &s, opv, NULL, 0,
@@ -5075,6 +5185,7 @@ static void xtest_tee_test_4011(ADBG_Case_t *c)
 			goto out;
 
 		/* 3 */
+		Do_ADBG_Log("\tencrypt");
 		tmp_size = sizeof(tmp);
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_asymmetric_encrypt(c, &s, ope, NULL, 0,
@@ -5105,6 +5216,7 @@ static void xtest_tee_test_4011(ADBG_Case_t *c)
 		memset(tmp + n, 0, tmp_size - n);
 
 		/* 5 */
+		Do_ADBG_Log("\tdecrypt");
 		out_size = sizeof(out);
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_asymmetric_decrypt(c, &s, opd, NULL, 0,
@@ -5134,6 +5246,8 @@ static void xtest_tee_test_4012(ADBG_Case_t *c)
 	uint8_t pool_input[32] = { };
 	time_t t = 0;
 	struct tm tm_local = { };
+
+/* ldts: return to bypass */
 
 	t = time(NULL);
 	tm_local = *localtime(&t);
@@ -5172,6 +5286,9 @@ static void xtest_tee_test_4013(ADBG_Case_t *c)
 	uint8_t key[32] = { };
 	uint8_t extra_data[32] = { };
 
+/* ldts: return to bypass */
+
+	Do_ADBG_Log("TA_CRYPT_CMD_DERIVE_TA_UNIQUE_KEY");
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_NONE,
 					 TEEC_NONE,
 					 TEEC_NONE,
@@ -5181,12 +5298,15 @@ static void xtest_tee_test_4013(ADBG_Case_t *c)
 						NULL, &ret_orig)))
 		return;
 
+	Do_ADBG_Log("\tpassed");
+
 	(void)ADBG_EXPECT_TEEC_SUCCESS(c,
 			TEEC_InvokeCommand(&session,
 					  TA_CRYPT_CMD_DERIVE_TA_UNIQUE_KEY,
 					  &op,
 					  &ret_orig));
 
+	Do_ADBG_Log("TA_CRYPT_CMD_DERIVE_TA_UNIQUE_KEY_SHM");
 	/* Negative test using non-secure memory */
 	memset(&op, 0, sizeof(op));
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
@@ -5204,6 +5324,7 @@ static void xtest_tee_test_4013(ADBG_Case_t *c)
 					   TA_CRYPT_CMD_DERIVE_TA_UNIQUE_KEY_SHM,
 					   &op,
 					   &ret_orig));
+	Do_ADBG_Log("\tpassed");
 
 	TEEC_CloseSession(&session);
 }

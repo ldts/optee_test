@@ -40,14 +40,6 @@ endif
 endif #OPTEE_OPENSSL_EXPORT
 endif #require OpenSSL
 
-srcs := regression_1000.c
-
-ifeq ($(CFG_GP_SOCKETS),y)
-srcs += regression_2000.c \
-	sock_server.c \
-	rand_stream.c
-endif
-
 srcs +=	adbg/src/adbg_case.c \
 	adbg/src/adbg_enum.c \
 	adbg/src/adbg_expect.c \
@@ -55,16 +47,9 @@ srcs +=	adbg/src/adbg_case.c \
 	adbg/src/adbg_run.c \
 	adbg/src/security_utils_hex.c \
 	aes_perf.c \
-	benchmark_1000.c \
-	benchmark_2000.c \
-	regression_4000.c \
-	regression_4100.c \
-	regression_5000.c \
-	regression_6000.c \
-	regression_7000.c \
-	regression_8000.c \
-	regression_8100.c \
 	sha_perf.c \
+	regression_4000.c \
+	regression_8000.c \
 	stats.c \
 	xtest_helpers.c \
 	xtest_main.c \
